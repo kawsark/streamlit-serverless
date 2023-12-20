@@ -18,21 +18,38 @@ Before you begin, make sure you have the following prerequisites:
 
 ## Deploy the sample application
 
-### Step 1: CDK synthesize a templare from your app
+### Step 1: Create and activate a Virtualenv
+
+In the root folder, run
+```
+python3 -m venv .venv
+source .venc/bin/activate
+```
+
+### Step 2: Install dependencies
+
+```
+pip install -r requirements.txt
+```
+
+### Step 3: CDK synthesize a templare from your app
+
+Make sure **docker** is running on your local machine. We will use it to build and bundle the Steamlit app docker image locally.
+
 To synthesize a CDK app, use the cdk synth command. Let’s check out the template synthesized from the sample app.
 
 ```
 cdk synth
 ```
 
-### Step 2: CDK bootstrapping
+### Step 4: CDK bootstrapping
 Bootstrapping is the process of provisioning resources for the AWS CDK before you can deploy AWS CDK apps into an AWS environment. (An AWS environment is a combination of an AWS account and Region).
 
 ```
 cdk bootstrap
 ```
 
-### Step 3: CDK deploy
+### Step 5: CDK deploy
 Use cdk deploy to deploy a CDK app:
 ```
 cdk deploy
