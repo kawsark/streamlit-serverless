@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-
-import os
 import aws_cdk as cdk
 
 from streamlit_serverless_app.frontend_stack import FrontendStack
@@ -14,6 +12,6 @@ app_env_vars = {
 }
 
 # Create the front-end Stack
-frontend_stack = FrontendStack(app, f"{APP_PREFIX}-FrontendStack", app_env_vars)
+frontend_stack = FrontendStack(app, f"{APP_PREFIX}-FrontendStack")
 
 app.synth()

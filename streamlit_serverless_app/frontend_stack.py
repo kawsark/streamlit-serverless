@@ -18,16 +18,15 @@ from aws_cdk.aws_ecr_assets import DockerImageAsset
 class FrontendStack(Stack):
     """Frontend stack for hosting Streamlit with ECS and Fargate"""
 
-    def __init__(self, scope: Construct, construct_id: str,
-                 app_execute_role: iam.Role, vpc: ec2.Vpc, 
-                 env_vars) -> None:
+    def __init__(self, scope: Construct, construct_id: str) -> None:
         super().__init__(scope, construct_id)
 
         platform_mapping = {
             "x86_64": ecs.CpuArchitecture.X86_64,
             "arm64": ecs.CpuArchitecture.ARM64
         }
-        architecture = platform_mapping["x86_64"] # Update architecture if needed
+        # Get architecture from platform (depending the machine that runs CDK)
+        architecture = platform_mapping[platform.machine()] 
 
         # The code that defines your stack goes here
         # Build Docker image
@@ -39,9 +38,19 @@ class FrontendStack(Stack):
         app_execute_role = iam.Role(self, "AppExecuteRole",
                                     assumed_by=iam.ServicePrincipal("ecs-tasks.amazonaws.com")                     
         )
-        app_execute_role.add_managed_policy(iam.ManagedPolicy.from_aws_managed_policy_name("AmazonECSTaskExecutionRolePolicy"))
-        self.app_execute_role = app_execute_role
-
+        app_execute_role.add_to_policy(
+            iam.PolicyStatement(
+                actions=[
+                    "ecr:GetAuthorizationToken",
+                    "ecr:BatchCheckLayerAvailability",
+                    "ecr:GetDownloadUrlForLayer",
+                    "ecr:BatchGetImage",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
+                ],
+                resources=["*"]
+            )  
+        )
         # create VPC to host the Ecs app
         vpc = ec2.Vpc(self, "StreamlitECSVpc", 
                       ip_addresses=ec2.IpAddresses.cidr("10.0.0.0/16"),
@@ -51,8 +60,6 @@ class FrontendStack(Stack):
                           ec2.SubnetConfiguration(name="isolated", subnet_type=ec2.SubnetType.PRIVATE_ISOLATED),
                       ]
         )
-        self.vpc = vpc
-
         ecs_cluster = ecs.Cluster(self, 'StreamlitAppCluster', 
                                   vpc=vpc)
         fargate_service = ecs_patterns.ApplicationLoadBalancedFargateService(self, "StreamlitAppService",
@@ -62,14 +69,14 @@ class FrontendStack(Stack):
                             cpu_architecture=architecture),
                         task_image_options=ecs_patterns.ApplicationLoadBalancedTaskImageOptions(
                             image=ecs.ContainerImage.from_docker_image_asset(imageAsset),
-                            environment=env_vars,
                             container_port=8501,
                             task_role=app_execute_role,
                         ), 
                         task_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS),
                         public_load_balancer=True,
                 )
-        # fargate_service.load_balancer.add_security_group(sg)
+
+        # Configure health check for ALB
         fargate_service.target_group.configure_health_check(
             path="/healthz"
         )
