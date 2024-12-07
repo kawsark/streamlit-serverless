@@ -23,7 +23,7 @@ Before you begin, make sure you have the following prerequisites:
 In the root folder, run
 ```
 python3 -m venv .venv
-source .venc/bin/activate
+source .venv/bin/activate
 ```
 
 ### Step 2: Install dependencies
